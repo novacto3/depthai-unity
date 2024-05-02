@@ -4,6 +4,7 @@ import cv2
 import _thread as thread
 import time
 import numpy as np
+import re
 
 class UnityBridge:
     def __init__(self, address):
@@ -27,8 +28,7 @@ class UnityBridge:
         self.socket.listen(10)
         thread.start_new_thread(self._run, ())
 
-    def send(self, image, names, objects, configs):
-        self.image = image
+    def send(self, names, objects, configs):
         self.names = names
         self.objects = objects
         self.configs = configs
@@ -54,14 +54,20 @@ class UnityBridge:
             serialized_obj = {}
             for field in config:
                 if hasattr(obj, field):
-                    value = getattr(obj, field)
-                    # Check if the value is a numpy.ndarray and convert it to a list
-                    if isinstance(value, np.ndarray):
-                        value = value.tolist()
-                    # Add other type checks and conversions as necessary
-                    serialized_obj[field] = value
+                    attr = getattr(obj, field)
+                    if callable(attr):
+                        value = attr()
+                        field = re.sub(f"^{re.escape('get_')}", "", field)
+                    else:
+                        value = attr
+                else:
+                    continue
+                # Check if the value is a numpy.ndarray and convert it to a list
+                if isinstance(value, np.ndarray):
+                    value = value.tolist()
+                # Add other type checks and conversions as necessary
+                serialized_obj[field] = value
             serialized_data[key_name] = serialized_obj
-
         return serialized_data
 
 
@@ -91,7 +97,7 @@ class UnityBridge:
             # Received DATA command
 
             self.data = self._serialize_objects(self.names, self.objects,self.configs)
-            self._send_data(conn, self.image,self.data)
+            self._send_data(conn, self.data)
 
             time.sleep(0.05) 
 
@@ -116,19 +122,19 @@ class UnityBridge:
                 break
 
 
-    def _send_data(self, conn, image, data):
+    def _send_data(self, conn,data):
         """ Send the image and serialized data over the socket. """
-        ret, encoded_image = cv2.imencode('.jpg', image)
-        if not ret:
-            print("Could not encode image")
-            return
+ #       ret, encoded_image = cv2.imencode('.jpg', image)
+ #       if not ret:
+ #          print("Could not encode image")
+ #           return
 
-        image_data = encoded_image.tobytes()
+ #       image_data = encoded_image.tobytes()
         json_data = json.dumps(data).encode('utf-8')
-
+        print(json_data)
         try:
-            conn.sendall(json_data+b'<<END_OF_JSON>>')
-            conn.sendall(image_data+b'<<END>>')
+            conn.sendall(json_data)
+#            conn.sendall(image_data+b'<<END>>')
             self.count = self.count + 1
         except socket.error as e:
             print(f"Error sending data: {e}")

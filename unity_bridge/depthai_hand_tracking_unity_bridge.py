@@ -17,18 +17,11 @@ sys.path.append(script_dir+'/depthai_hand_tracker')
 from HandTrackerRenderer import HandTrackerRenderer
 import argparse
 
-# -- UB
-from unity_bridge import UnityBridge, TestObject
-# Unity Bridge Configuration
-# Example usage in the main application
-address = ('127.0.0.1', 12347)
-unity_bridge = UnityBridge(address)
-unity_bridge.start()
-test_object = TestObject(result="Success")
-# -- UB
+
 
 
 parser = argparse.ArgumentParser()
+parser.add_argument('-p', '--port', type=int, help="Port")
 parser.add_argument('-e', '--edge', action="store_true",
                     help="Use Edge mode (postprocessing runs on the device)")
 parser_tracker = parser.add_argument_group("Tracker arguments")
@@ -80,6 +73,16 @@ else:
     from HandTracker import HandTracker
 
 
+# -- UB
+from unity_bridge import UnityBridge, TestObject
+# Unity Bridge Configuration
+# Example usage in the main application
+address = ('127.0.0.1', args.port)
+unity_bridge = UnityBridge(address)
+unity_bridge.start()
+test_object = TestObject(result="Success")
+# -- UB
+
 tracker = HandTracker(
         input_src=args.input, 
         use_lm= not args.no_lm, 
@@ -97,9 +100,10 @@ tracker = HandTracker(
         **tracker_args
         )
 
-renderer = HandTrackerRenderer(
-        tracker=tracker,
-        output=args.output)
+#renderer = HandTrackerRenderer(
+#        tracker=tracker,
+#        output=args.output)
+
 
 while True:
     # Run hand tracker on next frame
@@ -109,7 +113,7 @@ while True:
     frame, hands, bag = tracker.next_frame()
     if frame is None: break
     # Draw hands
-    frame = renderer.draw(frame, hands, bag)
+#    frame = renderer.draw(frame, hands, bag)
 
     # -- UB
     # Prepare data for serialization
@@ -118,23 +122,23 @@ while True:
     if len(hands)==1:
         names = ['hand_0','res2']
         objects = [hands[0],test_object]
-        configs = [['pd_score','pd_box','rotation','lm_score','landmarks','handedness','label','world_landmarks','gesture'],['result','arr1']]  # List of fields to serialize for each object
+        configs = [['lm_score','label','xyz','get_rotated_world_landmarks'],['result','arr1']]  # List of fields to serialize for each object
     elif len(hands)==2:
         names = ['hand_0','hand_1','res2']
         objects = [hands[0],hands[1],test_object]
-        configs = [['pd_score','pd_box','rotation','lm_score','landmarks','handedness','label','world_landmarks','gesture'],['pd_score','pd_box','rotation','lm_score','landmarks','handedness','label','world_landmarks','gesture'],['result','arr1']]  # List of fields to serialize for each object
+        configs = [['lm_score','label','xyz','get_rotated_world_landmarks'],['lm_score','xyz','label','get_rotated_world_landmarks'],['result','arr1']]  # List of fields to serialize for each object
     else:
         names = ['res2']
         objects = [test_object]
         configs = [['result','arr1']]  # List of fields to serialize for each object
 
     # Send data back to Unity
-    frame_ub = cv2.resize(frame,(576,324))
-    unity_bridge.send(frame_ub, names, objects, configs)
+    #frame_ub = cv2.resize(frame,(576,324))
+    unity_bridge.send(names, objects, configs)
     # -- UB
 
-    key = renderer.waitKey(delay=1)
-    if key == 27 or key == ord('q'):
-        break
-renderer.exit()
+#    key = renderer.waitKey(delay=1)
+  #  if key == 27 or key == ord('q'):
+    #    break
+#renderer.exit()
 tracker.exit()

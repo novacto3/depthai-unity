@@ -122,11 +122,11 @@ while True:
     if len(hands)==1:
         names = ['hand_0','res2']
         objects = [hands[0],test_object]
-        configs = [['lm_score','label','xyz','get_rotated_world_landmarks'],['result','arr1']]  # List of fields to serialize for each object
+        configs = [['rotation','lm_score','label','xyz','get_rotated_world_landmarks'],['result','arr1']]  # List of fields to serialize for each object
     elif len(hands)==2:
         names = ['hand_0','hand_1','res2']
         objects = [hands[0],hands[1],test_object]
-        configs = [['lm_score','label','xyz','get_rotated_world_landmarks'],['lm_score','xyz','label','get_rotated_world_landmarks'],['result','arr1']]  # List of fields to serialize for each object
+        configs = [['rotation','lm_score','label','xyz','get_rotated_world_landmarks'],['rotation','lm_score','xyz','label','get_rotated_world_landmarks'],['result','arr1']]  # List of fields to serialize for each object
     else:
         names = ['res2']
         objects = [test_object]
@@ -138,7 +138,7 @@ while True:
     # -- UB
 
 #    key = renderer.waitKey(delay=1)
-  #  if key == 27 or key == ord('q'):
-    #    break
+#    if key == 27 or key == ord('q'):
+#        break
 #renderer.exit()
 tracker.exit()

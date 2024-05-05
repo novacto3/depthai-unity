@@ -91,8 +91,8 @@ class UnityBridge:
                 self._error(conn, addr)
                 break
 
-            if not data.decode('utf-8'):
-                continue
+            #if not data.decode('utf-8'):
+            #    continue
 
             # Received DATA command
 
@@ -118,6 +118,7 @@ class UnityBridge:
                 conn, addr = self.socket.accept()
                 print('Connected with ', addr)
                 thread.start_new_thread(self.client, (conn, addr))
+                time.sleep(1000)
             except:
                 break
 
@@ -131,9 +132,9 @@ class UnityBridge:
 
  #       image_data = encoded_image.tobytes()
         json_data = json.dumps(data).encode('utf-8')
-        print(json_data)
+        #print(json_data)
         try:
-            conn.sendall(json_data)
+            conn.sendall(json_data+b'<<END>>')
 #            conn.sendall(image_data+b'<<END>>')
             self.count = self.count + 1
         except socket.error as e:

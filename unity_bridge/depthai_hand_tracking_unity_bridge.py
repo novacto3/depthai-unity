@@ -110,7 +110,7 @@ while True:
     # 'bag' contains some information related to the frame 
     # and not related to a particular hand like body keypoints in Body Pre Focusing mode
     # Currently 'bag' contains meaningful information only when Body Pre Focusing is used
-    frame, hands, bag = tracker.next_frame()
+    frame, hands, bag, serialNumber = tracker.next_frame()
     if frame is None: break
     # Draw hands
 #    frame = renderer.draw(frame, hands, bag)
@@ -134,7 +134,7 @@ while True:
 
     # Send data back to Unity
     #frame_ub = cv2.resize(frame,(576,324))
-    unity_bridge.send(names, objects, configs)
+    unity_bridge.send(names, objects, configs, serialNumber)
     # -- UB
 
 #    key = renderer.waitKey(delay=1)

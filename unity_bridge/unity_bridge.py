@@ -1,5 +1,6 @@
 import socket
 import json
+from types import NoneType
 import cv2
 import _thread as thread
 import time
@@ -15,6 +16,7 @@ class UnityBridge:
         self.names = None
         self.objects = None
         self.configs = None
+        self.serialNumber = None
         self.data = None
         self.count = 0
 
@@ -28,10 +30,11 @@ class UnityBridge:
         self.socket.listen(10)
         thread.start_new_thread(self._run, ())
 
-    def send(self, names, objects, configs):
+    def send(self, names, objects, configs, serialNumber):
         self.names = names
         self.objects = objects
         self.configs = configs
+        self.serialNumber = serialNumber
 
     def close(self):
         """ Close the socket connection. """
@@ -39,7 +42,7 @@ class UnityBridge:
         if self.socket:
             self.socket.close()
 
-    def _serialize_objects(self, key_names, objects, configs):
+    def _serialize_objects(self, key_names, objects, configs, serialNumber):
         # Ensure that key_names, objects, and configs have the same length
         if not (len(key_names) == len(objects) == len(configs)):
             raise ValueError("Length of key_names, objects, and configs must be the same.")
@@ -68,10 +71,11 @@ class UnityBridge:
                 # Add other type checks and conversions as necessary
                 serialized_obj[field] = value
             serialized_data[key_name] = serialized_obj
+        serialized_data["serialNumber"] = serialNumber
         return serialized_data
 
 
-    def client(self,conn, addr):
+    def client(self, conn, addr):
         while True:
 
             # Wait for DATA command
@@ -91,26 +95,20 @@ class UnityBridge:
                 self._error(conn, addr)
                 break
 
-            #if not data.decode('utf-8'):
-            #    continue
+            if not data.decode('utf-8'):
+                continue
 
             # Received DATA command
 
-            self.data = self._serialize_objects(self.names, self.objects,self.configs)
+            self.data = self._serialize_objects(self.names, self.objects,self.configs, self.serialNumber)
             self._send_data(conn, self.data)
 
             time.sleep(0.05) 
 
         conn.close()
         print('Disconnected ', addr)
-
-    def _error(self,conn, addr):
-        try:
-            print("Error.")
-        except:
-            print(addr, "Disconnected.")
-
-    def _run(self):
+        
+    def createConnection(self):
         """ The main loop for the networking thread. """
         while True:
             print("Listening...")
@@ -120,7 +118,18 @@ class UnityBridge:
                 thread.start_new_thread(self.client, (conn, addr))
                 time.sleep(1000)
             except:
-                break
+                break    
+
+    def _error(self, conn, addr):
+        print("Client disconnected. Retry...")
+        try:
+            self.createConnection()
+        except:
+            print(addr, "Disconnected.")
+
+    def _run(self):
+        time.sleep(5)
+        self.createConnection()
 
 
     def _send_data(self, conn,data):

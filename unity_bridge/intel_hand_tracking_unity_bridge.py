@@ -41,10 +41,12 @@ unity_bridge.start()
 test_object = TestObject(result="Success")
 # -- UB
 
-tracker = IntelHandTracker(**tracker_args)
+tracker = IntelHandTracker(args.port, **tracker_args)
+if not tracker.created:
+    sys.exit()
 
 #renderer = HandTrackerRenderer(tracker=tracker)
-
+count = 0
 
 while True:
     # Run hand tracker on next frame
@@ -58,7 +60,8 @@ while True:
 
     # -- UB
     # Prepare data for serialization
-    test_object.arr1 = [unity_bridge.count]
+    test_object.arr1 = [count]
+    count = count+1
     if len(hands)==1:
         names = ['hand_0','res2']
         objects = [hands[0],test_object]
